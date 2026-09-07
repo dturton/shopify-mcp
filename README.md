@@ -14,6 +14,7 @@ MCP Server for Shopify API, enabling interaction with store data through GraphQL
 ## Features
 
 - **Product Management**: Full CRUD for products, variants, and options
+- **Custom Data**: Query every product by metafield (references resolved) and upsert metaobjects
 - **Customer Management**: Load customer data and manage customer tags
 - **Order Management**: Advanced order querying and filtering
 - **GraphQL Integration**: Direct integration with Shopify's GraphQL Admin API
@@ -254,6 +255,34 @@ shopify-mcp --clientId=<ID> --clientSecret=<SECRET> --domain=<YOUR_SHOP>.myshopi
    - Inputs:
      - `productId` (string, required): Shopify product GID
      - `variantIds` (array of strings, required): Variant GIDs to delete
+
+9. `search-product-by-sku`
+
+   - Search for products by variant SKU
+   - Inputs:
+     - `sku` (string, required): Variant SKU to search for
+     - `limit` (number): Maximum number of products to return
+
+### Metafields & Metaobjects
+
+1. `get-products-by-metafield`
+
+   - List every product that has a value for a given metafield, scanning the whole catalog (250 products per request). For reference types (e.g. `list.metaobject_reference`, `list.product_reference`) the referenced products/metaobjects are resolved into `references`, in list order, including each metaobject's fields.
+   - Inputs:
+     - `namespace` (string, required): Metafield namespace, e.g. `custom`
+     - `key` (string, required): Metafield key, e.g. `breakdown_parts`
+     - `query` (string, optional): Shopify product search filter to narrow the scan, e.g. `vendor:Goulds`
+     - `limit` (number, optional): Stop once at least this many matching products are collected. Omit to fetch all
+     - `cursor` (string, optional): `endCursor` from a previous call, to continue
+   - Returns `{ products, count, scanned, hasNextPage, endCursor }`. To write a value back use `update-product` with `metafields: [{ namespace, key, type, value }]` (`value` as a string; `JSON.stringify` lists/objects), or `upsert-metaobject` to edit a referenced metaobject.
+
+2. `upsert-metaobject`
+
+   - Create or update a metaobject by type + handle. Only the given fields change.
+   - Inputs:
+     - `type` (string, required): Metaobject definition type, e.g. `breakdown_part`
+     - `handle` (string, required): Metaobject handle. An existing handle updates in place; a new handle creates
+     - `fields` (array, required): `[{ key, value }]`, values as strings (GIDs for references, JSON for lists)
 
 ### Customer Management
 1. `get-customers`

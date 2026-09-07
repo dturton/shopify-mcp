@@ -22,6 +22,9 @@ import { manageProductVariants } from "./tools/manageProductVariants.js";
 import { deleteProductVariants } from "./tools/deleteProductVariants.js";
 import { deleteProduct } from "./tools/deleteProduct.js";
 import { manageProductOptions } from "./tools/manageProductOptions.js";
+import { searchProductBySku } from "./tools/searchProductBySku.js";
+import { getProductsByMetafield } from "./tools/getProductsByMetafield.js";
+import { upsertMetaobject } from "./tools/upsertMetaobject.js";
 import { ShopifyAuth } from "./lib/shopifyAuth.js";
 
 // Parse command line arguments
@@ -112,6 +115,9 @@ manageProductVariants.initialize(shopifyClient);
 deleteProductVariants.initialize(shopifyClient);
 deleteProduct.initialize(shopifyClient);
 manageProductOptions.initialize(shopifyClient);
+searchProductBySku.initialize(shopifyClient);
+getProductsByMetafield.initialize(shopifyClient);
+upsertMetaobject.initialize(shopifyClient);
 
 // Set up MCP server
 const server = new McpServer({
@@ -470,6 +476,21 @@ server.tool(
   }
 );
 
+// Add the searchProductBySku tool
+server.tool(
+  "search-product-by-sku",
+  {
+    sku: z.string().min(1),
+    limit: z.number().default(10)
+  },
+  async (args) => {
+    const result = await searchProductBySku.execute(args);
+    return {
+      content: [{ type: "text", text: JSON.stringify(result) }]
+    };
+  }
+);
+
 // Add the deleteProductVariants tool
 server.tool(
   "delete-product-variants",
@@ -479,6 +500,32 @@ server.tool(
   },
   async (args) => {
     const result = await deleteProductVariants.execute(args);
+    return {
+      content: [{ type: "text", text: JSON.stringify(result) }],
+    };
+  }
+);
+
+// Add the getProductsByMetafield tool
+server.tool(
+  getProductsByMetafield.name,
+  getProductsByMetafield.description,
+  getProductsByMetafield.schema.shape,
+  async (args) => {
+    const result = await getProductsByMetafield.execute(args);
+    return {
+      content: [{ type: "text", text: JSON.stringify(result) }],
+    };
+  }
+);
+
+// Add the upsertMetaobject tool
+server.tool(
+  upsertMetaobject.name,
+  upsertMetaobject.description,
+  upsertMetaobject.schema.shape,
+  async (args) => {
+    const result = await upsertMetaobject.execute(args);
     return {
       content: [{ type: "text", text: JSON.stringify(result) }],
     };

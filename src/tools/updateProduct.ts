@@ -4,7 +4,10 @@ import { z } from "zod";
 
 // Input schema for updateProduct
 const UpdateProductInputSchema = z.object({
-  id: z.string().min(1).describe("Shopify product GID, e.g. gid://shopify/Product/123"),
+  id: z
+    .string()
+    .min(1)
+    .describe("Shopify product GID, e.g. gid://shopify/Product/123"),
   title: z.string().optional(),
   descriptionHtml: z.string().optional(),
   handle: z.string().optional().describe("URL slug for the product"),
@@ -27,12 +30,21 @@ const UpdateProductInputSchema = z.object({
         key: z.string().optional(),
         value: z.string(),
         type: z.string().optional(),
-      })
+      }),
     )
     .optional(),
-  collectionsToJoin: z.array(z.string()).optional().describe("Collection GIDs to add the product to"),
-  collectionsToLeave: z.array(z.string()).optional().describe("Collection GIDs to remove the product from"),
-  redirectNewHandle: z.boolean().optional().describe("If true, old handle redirects to new handle"),
+  collectionsToJoin: z
+    .array(z.string())
+    .optional()
+    .describe("Collection GIDs to add the product to"),
+  collectionsToLeave: z
+    .array(z.string())
+    .optional()
+    .describe("Collection GIDs to remove the product from"),
+  redirectNewHandle: z
+    .boolean()
+    .optional()
+    .describe("If true, old handle redirects to new handle"),
 });
 
 type UpdateProductInput = z.infer<typeof UpdateProductInputSchema>;
@@ -42,7 +54,8 @@ let shopifyClient: GraphQLClient;
 
 const updateProduct = {
   name: "update-product",
-  description: "Update an existing product's fields (title, description, status, tags, etc.)",
+  description:
+    "Update an existing product's fields (title, description, status, tags, etc.)",
   schema: UpdateProductInputSchema,
 
   initialize(client: GraphQLClient) {
@@ -54,8 +67,8 @@ const updateProduct = {
       const { id, ...productFields } = input;
 
       const query = gql`
-        mutation productUpdate($input: ProductInput!) {
-          productUpdate(input: $input) {
+        mutation productUpdate($product: ProductUpdateInput!) {
+          productUpdate(product: $product) {
             product {
               id
               title
@@ -65,34 +78,6 @@ const updateProduct = {
               productType
               status
               tags
-              seo {
-                title
-                description
-              }
-              metafields(first: 10) {
-                edges {
-                  node {
-                    id
-                    namespace
-                    key
-                    value
-                  }
-                }
-              }
-              variants(first: 20) {
-                edges {
-                  node {
-                    id
-                    title
-                    price
-                    sku
-                    selectedOptions {
-                      name
-                      value
-                    }
-                  }
-                }
-              }
             }
             userErrors {
               field
@@ -103,7 +88,7 @@ const updateProduct = {
       `;
 
       const variables = {
-        input: {
+        product: {
           id,
           ...productFields,
         },
@@ -120,7 +105,7 @@ const updateProduct = {
         throw new Error(
           `Failed to update product: ${data.productUpdate.userErrors
             .map((e) => `${e.field}: ${e.message}`)
-            .join(", ")}`
+            .join(", ")}`,
         );
       }
 
@@ -138,13 +123,14 @@ const updateProduct = {
           tags: product.tags,
           seo: product.seo,
           metafields: product.metafields?.edges.map((e: any) => e.node) || [],
-          variants: product.variants?.edges.map((e: any) => ({
-            id: e.node.id,
-            title: e.node.title,
-            price: e.node.price,
-            sku: e.node.sku,
-            options: e.node.selectedOptions,
-          })) || [],
+          variants:
+            product.variants?.edges.map((e: any) => ({
+              id: e.node.id,
+              title: e.node.title,
+              price: e.node.price,
+              sku: e.node.sku,
+              options: e.node.selectedOptions,
+            })) || [],
         },
       };
     } catch (error) {
@@ -152,7 +138,7 @@ const updateProduct = {
       throw new Error(
         `Failed to update product: ${
           error instanceof Error ? error.message : String(error)
-        }`
+        }`,
       );
     }
   },
